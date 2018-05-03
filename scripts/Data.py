@@ -71,7 +71,37 @@ def read_image_resize(img_file, img_size):
     return img
 
 
-def load_data(img_dir, img_size):
+def read_image_feature(img_file, nfeatures):
+    # Read image
+    img = cv2.imread(img_file)
+
+    # cv2 load image as BGR, so convert to RGB
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    orb = cv2.ORB_create(nfeatures=nfeatures)
+    kp = orb.detect(img, None)
+    kp, des = orb.compute(img, kp)
+
+    if len(kp) == 0:
+        print('out', img_file)
+        return None
+
+    pad = nfeatures - len(kp)
+    if pad > 0:
+        t = [[0] * 32] * pad
+        t = np.array(t)
+        des = np.append(des, t, axis=0)
+
+    # Save as float 32
+    des = des.astype(np.float32)
+
+    # Get value between 0-1 from 0-255
+    des = np.multiply(des, 1.0 / 255.0)
+
+    return des
+
+
+def load_data(img_dir, nfeatures):
     if not gfile.Exists(img_dir):
         print('Image directory ' + img_dir + ' not found.')
         return None
@@ -131,13 +161,10 @@ def load_data(img_dir, img_size):
             label_name.append(label)
 
             # Read image and resize, ratio resize -> center cropping
-            img = read_image_resize_ratio(file, img_size)
-
-            # Read image and resize, squashing
-            # img = read_image_resize(file, img_size)
-
-            # plt.imshow(img)
-            # plt.show()
+            img = read_image_feature(file, nfeatures)
+            if img is None:
+                print('got it')
+                continue
 
             img_data.append(img)
 

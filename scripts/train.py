@@ -9,7 +9,7 @@ import itertools
 
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, BatchNormalization
+from keras.layers import Dense, Dropout, Flatten, Conv1D, MaxPooling1D, BatchNormalization
 from keras import backend as K
 
 import tensorflow as tf
@@ -19,34 +19,27 @@ from tensorflow.python.platform import gfile
 import Data
 
 
-def build_model(img_size, num_channels, num_classes, learning_rate):
+def build_model(nfeatures, num_channels, num_classes, learning_rate):
     model = Sequential()
 
-    model.add(Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='relu',
-                     input_shape=(img_size, img_size, num_channels)))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
+    model.add(Conv1D(filters=64, kernel_size=17, strides=2, padding='same', activation='relu',
+                     input_shape=(nfeatures, num_channels)))
+    model.add(BatchNormalization(axis=2))
+    model.add(MaxPooling1D(pool_size=2, strides=2, padding='same'))
 
-    model.add(Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(BatchNormalization(axis=3))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
-    model.add(Dropout(0.4))
+    model.add(Conv1D(filters=128, kernel_size=15, strides=2, padding='same', activation='relu'))
+    model.add(BatchNormalization(axis=2))
+    model.add(MaxPooling1D(pool_size=2, strides=2, padding='same'))
 
-    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
-    model.add(BatchNormalization(axis=3))
-    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=256, kernel_size=13, strides=1, padding='same', activation='relu'))
+    model.add(Conv1D(filters=256, kernel_size=13, strides=1, padding='same', activation='relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(BatchNormalization(axis=3))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
-    model.add(Dropout(0.4))
-
-    model.add(Conv2D(filters=192, kernel_size=(3, 3), padding='same', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
-    model.add(BatchNormalization(axis=3))
-    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=128, kernel_size=15, strides=1, padding='same', activation='relu'))
+    model.add(MaxPooling1D(pool_size=2, strides=2, padding='same'))
 
     model.add(Flatten())
+
+    model.add(Dense(2048, activation='relu'))
 
     model.add(Dense(1024, activation='relu'))
 
@@ -56,8 +49,8 @@ def build_model(img_size, num_channels, num_classes, learning_rate):
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)
-    opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
-    # opt = keras.optimizers.Adam(lr=learning_rate)
+    # opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
+    opt = keras.optimizers.Adam(lr=learning_rate)
 
     model.compile(loss=keras.losses.categorical_crossentropy, optimizer=opt,
                   metrics=['accuracy'])
@@ -221,22 +214,22 @@ def main():
     valid_data_dir = '../files/thaibaht_photos_diff/valid'
     log_dir = '../files/training_logs/'
 
-    img_size = 128
-    num_channels = 3
+    nfeatures = 500
+    num_channels = 32
 
     batch_size = 32
     epochs = 30
 
     learning_rate = 0.001
 
-    x_train, y_train, train_classes = Data.load_data(train_data_dir, img_size)
-    x_valid, y_valid, valid_classes = Data.load_data(valid_data_dir, img_size)
+    x_train, y_train, train_classes = Data.load_data(train_data_dir, nfeatures)
+    x_valid, y_valid, valid_classes = Data.load_data(valid_data_dir, nfeatures)
 
     classes = train_classes
     num_classes = len(train_classes)
 
     # TODO - Create new model
-    model = build_model(img_size, num_channels, num_classes, learning_rate)
+    model = build_model(nfeatures, num_channels, num_classes, learning_rate)
 
     input_node_names = model.input.name.split(':')[0]
     output_node_name = model.output.name.split(':')[0]
