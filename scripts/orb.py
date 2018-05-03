@@ -11,15 +11,15 @@ def crop(img, size):
     return img[y: y + size, x: x + size].copy()
 
 
-img1 = cv2.imread('20s.jpg', 1)
-img2 = cv2.imread('t.jpg', 1)
+img1 = cv2.imread('1.jpg', 1)
+img2 = cv2.imread('2.jpg', 1)
 
 orb = cv2.ORB_create()
 
 kp1, des1 = orb.detectAndCompute(img1, None)
 kp2, des2 = orb.detectAndCompute(img2, None)
 
-test = np.array(kp1)
+sc = np.multiply(des1, 1/255)
 
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
